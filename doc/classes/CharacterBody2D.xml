@@ -142,6 +142,7 @@
 				Modifies [member velocity] if a slide collision occurred. To get the latest collision call [method get_last_slide_collision], for detailed information about collisions that occurred, use [method get_slide_collision].
 				When the body touches a moving platform, the platform's velocity is automatically added to the body motion. If a collision occurs due to the platform's motion, it will always be first in the slide collisions.
 				The general behavior and available properties change according to the [member motion_mode].
+				A custom delta can be supplied if needed.
 				Returns [code]true[/code] if the body collided, otherwise, returns [code]false[/code].
 			</description>
 		</method>

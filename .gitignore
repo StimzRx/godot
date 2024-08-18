@@ -379,3 +379,7 @@ $RECYCLE.BIN/
 *.msp
 *.lnk
 *.generated.props
+
+
+# StimzRx's Exclusions
+ntfy_token
