@@ -122,6 +122,14 @@ class SurfaceUpgradeTool;
 class SurfaceUpgradeDialog;
 class WindowWrapper;
 
+struct EditorProgress {
+	String task;
+	bool step(const String &p_state, int p_step = -1, bool p_force_refresh = true);
+
+	EditorProgress(const String &p_task, const String &p_label, int p_amount, bool p_can_cancel = false);
+	~EditorProgress();
+};
+
 class EditorNode : public Node {
 	GDCLASS(EditorNode, Node);
 
@@ -470,6 +478,7 @@ private:
 	String external_file;
 	String open_navigate;
 	String saving_scene;
+	EditorProgress *save_scene_progress = nullptr;
 
 	DynamicFontImportSettingsDialog *fontdata_import_settings = nullptr;
 	SceneImportSettingsDialog *scene_import_settings = nullptr;
@@ -489,6 +498,8 @@ private:
 	SurfaceUpgradeTool *surface_upgrade_tool = nullptr;
 	SurfaceUpgradeDialog *surface_upgrade_dialog = nullptr;
 	bool run_surface_upgrade_tool = false;
+
+	bool was_window_windowed_last = false;
 
 	static EditorBuildCallback build_callbacks[MAX_BUILD_CALLBACKS];
 	static EditorPluginInitializeCallback plugin_init_callbacks[MAX_INIT_CALLBACKS];
@@ -571,6 +582,7 @@ private:
 	void _show_messages();
 	void _vp_resized();
 	void _titlebar_resized();
+	void _viewport_resized();
 
 	void _update_undo_redo_allowed();
 
@@ -624,6 +636,7 @@ private:
 
 	void _find_node_types(Node *p_node, int &count_2d, int &count_3d);
 	void _save_scene_with_preview(String p_file, int p_idx = -1);
+	void _close_save_scene_progress();
 
 	bool _find_scene_in_use(Node *p_node, const String &p_path) const;
 
@@ -640,6 +653,8 @@ private:
 
 	void _save_central_editor_layout_to_config(Ref<ConfigFile> p_config_file);
 	void _load_central_editor_layout_from_config(Ref<ConfigFile> p_config_file);
+
+	void _save_window_settings_to_config(Ref<ConfigFile> p_layout, const String &p_section);
 
 	void _save_open_scenes_to_config(Ref<ConfigFile> p_layout);
 	void _load_open_scenes_from_config(Ref<ConfigFile> p_layout);
@@ -835,6 +850,8 @@ public:
 	};
 
 	HashMap<int, SceneModificationsEntry> scenes_modification_table;
+	List<String> scenes_reimported;
+	List<String> resources_reimported;
 
 	void update_node_from_node_modification_entry(Node *p_node, ModificationNodeEntry &p_node_modification);
 
@@ -950,33 +967,6 @@ public:
 	Vector<Ref<EditorResourceConversionPlugin>> find_resource_conversion_plugin(const Ref<Resource> &p_for_resource);
 
 	bool ensure_main_scene(bool p_from_native);
-};
-
-struct EditorProgress {
-	String task;
-	bool step(const String &p_state, int p_step = -1, bool p_force_refresh = true) {
-		if (Thread::is_main_thread()) {
-			return EditorNode::progress_task_step(task, p_state, p_step, p_force_refresh);
-		} else {
-			EditorNode::progress_task_step_bg(task, p_step);
-			return false;
-		}
-	}
-	EditorProgress(const String &p_task, const String &p_label, int p_amount, bool p_can_cancel = false) {
-		if (Thread::is_main_thread()) {
-			EditorNode::progress_add_task(p_task, p_label, p_amount, p_can_cancel);
-		} else {
-			EditorNode::progress_add_task_bg(p_task, p_label, p_amount);
-		}
-		task = p_task;
-	}
-	~EditorProgress() {
-		if (Thread::is_main_thread()) {
-			EditorNode::progress_end_task(task);
-		} else {
-			EditorNode::progress_end_task_bg(task);
-		}
-	}
 };
 
 class EditorPluginList : public Object {
